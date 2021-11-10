@@ -16,7 +16,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var falseButton: Button
     private lateinit var nextButton: View
     private var prevButton: View? = null
+
     private lateinit var questionTextView: TextView
+
     private val questionBank = listOf(
         Question(R.string.question_australia, true),
         Question(R.string.question_oceans, true),
@@ -24,67 +26,41 @@ class MainActivity : AppCompatActivity() {
         Question(R.string.question_africa, true),
         Question(R.string.question_americas, false),
         Question(R.string.question_asia, true)
-
     )
-    private val kostil = arrayListOf<Boolean>(false, false, false, false, false, false)
+
+    private val kostil = arrayOf(false, false, false, false, false, false)
+
     var countTrueAnswer = 0
     private var currentIndex = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "onCreate(Bundle?) called")
         setContentView(R.layout.activity_main)
+
+        Log.d(TAG, "onCreate(Bundle?) called")
+
         trueButton = findViewById(R.id.true_button)
         falseButton = findViewById(R.id.false_button)
         nextButton = findViewById(R.id.next_button)
         prevButton = findViewById(R.id.prev_button)
         questionTextView = findViewById(R.id.question_text_view)
 
-        trueButton.setOnClickListener { view: View ->
-            checkAnswer(true)
-            countingTrueAnswers(true)
-            kostil[currentIndex] = true
-            buttonLock()
-            if (kostil.all { it == true }) {
-                countTrueAnswer = countTrueAnswer * 100 / 6
-                Toast.makeText(applicationContext, countTrueAnswer.toString(), Toast.LENGTH_LONG).show()
-            }
-        }
+        trueButton.setOnClickListener { onAnswerButtonClick(true) }
+        falseButton.setOnClickListener { onAnswerButtonClick(false) }
 
-        falseButton.setOnClickListener { view: View ->
-            checkAnswer(false)
-            countingTrueAnswers(false)
-            kostil[currentIndex] = true
-            buttonLock()
-            if (kostil.all { it == true }) {
-                countTrueAnswer = countTrueAnswer * 100 / 6
-                Toast.makeText(applicationContext, countTrueAnswer.toString(), Toast.LENGTH_LONG).show()
-            }
-
-        }
         nextButton.setOnClickListener {
             currentIndex = (currentIndex + 1) % questionBank.size
             updateQuestion()
-            buttonUnlock()
-            if (kostil[currentIndex]) {
-                trueButton.isEnabled = false
-                falseButton.isEnabled = false
-
-            }
-
-
+            toggleButtons(!kostil[currentIndex])
         }
+
         prevButton?.setOnClickListener {
             if (currentIndex > 0)
                 currentIndex = (currentIndex - 1) % questionBank.size
             updateQuestion()
-            buttonUnlock()
-            if (kostil[currentIndex]) {
-                trueButton.isEnabled = false
-                falseButton.isEnabled = false
-            }
-
-
+            toggleButtons(!kostil[currentIndex])
         }
+
         updateQuestion()
     }
 
@@ -114,32 +90,22 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onDestroy() called")
     }
 
-    private fun buttonLock() {
-        trueButton.isEnabled = false
-        falseButton.isEnabled = false
-
-    }
-
-    private fun buttonUnlock() {
-        trueButton.isEnabled = true
-        falseButton.isEnabled = true
+    private fun toggleButtons(isEnabled: Boolean) {
+        trueButton.isEnabled = isEnabled
+        falseButton.isEnabled = isEnabled
     }
 
     private fun updateQuestion() {
         val questionTextResId = questionBank[currentIndex].textResId
         questionTextView.setText(questionTextResId)
-
     }
 
     private fun checkAnswer(userAnswer: Boolean) {
-
         val correctAnswer = questionBank[currentIndex].answer
         val messageResId = if (userAnswer == correctAnswer) {
-
             R.string.correct_toast
         } else {
             R.string.incorrect_toast
-
         }
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }
@@ -151,4 +117,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun onAnswerButtonClick(isTrueButton: Boolean) {
+        checkAnswer(isTrueButton)
+        countingTrueAnswers(isTrueButton)
+        kostil[currentIndex] = true
+        toggleButtons(isEnabled = false)
+        if (kostil.all { it }) {
+            countTrueAnswer = countTrueAnswer * 100 / 6
+            Toast.makeText(applicationContext, countTrueAnswer.toString(), Toast.LENGTH_LONG).show()
+        }
+    }
 }
